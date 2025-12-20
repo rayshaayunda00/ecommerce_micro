@@ -29,93 +29,62 @@ class _ReviewPageState extends State<ReviewPage> {
     });
   }
 
-  // --- LOGIC: Tambah Review ke API ---
-  void _submitReview(String reviewText, int rating) async {
+  // Fungsi Kirim ke API
+  void _submitReview(String content, int rating) async {
     // Tampilkan loading
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (ctx) => const Center(child: CircularProgressIndicator()),
-    );
+    showDialog(context: context, barrierDismissible: false, builder: (c) => const Center(child: CircularProgressIndicator()));
 
-    // Buat objek model
     final newReview = ModelReview(
-      id: 0, // ID biasanya diabaikan oleh backend saat create
+      id: 0,
       productId: widget.productId,
-      review: reviewText,
+      review: content,
       rating: rating,
     );
 
-    // Kirim ke API
     bool success = await apiService.addReview(newReview);
 
-    // Tutup Loading
-    if (mounted) Navigator.pop(context);
+    if (mounted) Navigator.pop(context); // Tutup loading
 
     if (success) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Review berhasil ditambahkan'), backgroundColor: Colors.green),
-        );
-        Navigator.pop(context); // Tutup dialog input
-        _loadReviews(); // Refresh list review
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Review berhasil ditambahkan'), backgroundColor: Colors.green));
+        Navigator.pop(context); // Tutup dialog form
+        _loadReviews(); // Refresh list
       }
     } else {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Gagal menambahkan review'), backgroundColor: Colors.red),
-        );
-      }
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Gagal mengirim review'), backgroundColor: Colors.red));
     }
   }
 
-  void _showAddReviewDialog() {
+  void _addReviewDialog() {
     final reviewController = TextEditingController();
-    double currentRating = 5.0;
+    double rating = 5;
 
     showDialog(
       context: context,
       builder: (context) {
-        // StatefulBuilder digunakan agar Dropdown bisa update state di dalam Dialog
         return StatefulBuilder(
           builder: (context, setStateDialog) {
             return AlertDialog(
-              title: Text('Review ${widget.productName}'),
+              title: Text('Review - ${widget.productName}'),
               content: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   TextField(
                     controller: reviewController,
-                    decoration: const InputDecoration(
-                      labelText: 'Tulis komentar...',
-                      border: OutlineInputBorder(),
-                    ),
+                    decoration: const InputDecoration(labelText: 'Review', border: OutlineInputBorder()),
                     maxLines: 3,
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 12),
                   Row(
                     children: [
-                      const Text('Rating: ', style: TextStyle(fontWeight: FontWeight.bold)),
-                      const SizedBox(width: 8),
+                      const Text('Rating:'),
+                      const SizedBox(width: 12),
                       DropdownButton<double>(
-                        value: currentRating,
-                        items: [1, 2, 3, 4, 5].map((e) => DropdownMenuItem(
-                          value: e.toDouble(),
-                          child: Row(
-                            children: [
-                              Text("$e"),
-                              const SizedBox(width: 4),
-                              const Icon(Icons.star, color: Colors.orange, size: 16),
-                            ],
-                          ),
-                        )).toList(),
+                        value: rating,
+                        items: [1,2,3,4,5].map((e) => DropdownMenuItem(value: e.toDouble(), child: Text(e.toString()))).toList(),
                         onChanged: (v) {
-                          if (v != null) {
-                            // Update state LOKAL DIALOG
-                            setStateDialog(() {
-                              currentRating = v;
-                            });
-                          }
+                          if (v != null) setStateDialog(() => rating = v);
                         },
                       ),
                     ],
@@ -123,14 +92,11 @@ class _ReviewPageState extends State<ReviewPage> {
                 ],
               ),
               actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: const Text('Batal'),
-                ),
+                TextButton(onPressed: () => Navigator.pop(context), child: const Text('Batal')),
                 ElevatedButton(
                   onPressed: () {
                     if (reviewController.text.isNotEmpty) {
-                      _submitReview(reviewController.text, currentRating.toInt());
+                      _submitReview(reviewController.text, rating.toInt());
                     }
                   },
                   child: const Text('Kirim'),
@@ -149,20 +115,14 @@ class _ReviewPageState extends State<ReviewPage> {
       child: ListTile(
         leading: CircleAvatar(
           backgroundColor: Colors.pink[100],
-          child: Text(
-            "${review.rating}",
-            style: TextStyle(color: Colors.pink[800], fontWeight: FontWeight.bold),
-          ),
+          child: Text(review.rating.toString(), style: TextStyle(color: Colors.pink[800], fontWeight: FontWeight.bold)),
         ),
         title: Text(review.review),
         subtitle: Row(
-          children: List.generate(5, (index) {
-            return Icon(
+          children: List.generate(5, (index) => Icon(
               index < review.rating ? Icons.star : Icons.star_border,
-              color: Colors.orange,
-              size: 16,
-            );
-          }),
+              color: Colors.orange, size: 16
+          )),
         ),
       ),
     );
@@ -176,27 +136,18 @@ class _ReviewPageState extends State<ReviewPage> {
       body: FutureBuilder<List<ModelReview>>(
         future: _reviewsFuture,
         builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          if (snapshot.hasError) {
-            return Center(child: Text('Error: ${snapshot.error}'));
-          }
-          if (!snapshot.hasData || snapshot.data!.isEmpty) {
-            return const Center(child: Text('Belum ada review. Jadilah yang pertama!'));
-          }
+          if (snapshot.connectionState == ConnectionState.waiting) return const Center(child: CircularProgressIndicator());
+          if (!snapshot.hasData || snapshot.data!.isEmpty) return const Center(child: Text('Belum ada review.'));
 
           final reviews = snapshot.data!;
           return ListView.builder(
             itemCount: reviews.length,
-            itemBuilder: (context, index) {
-              return _buildReviewItem(reviews[index]);
-            },
+            itemBuilder: (context, index) => _buildReviewItem(reviews[index]),
           );
         },
       ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: _showAddReviewDialog,
+        onPressed: _addReviewDialog,
         label: const Text('Tulis Review'),
         icon: const Icon(Icons.rate_review),
         backgroundColor: Colors.pink,

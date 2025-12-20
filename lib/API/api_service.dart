@@ -1,7 +1,7 @@
 // --- FILE: lib/API/api_service.dart ---
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import '../model/model_user.dart';
+import '../model/model_user.dart'; // Pastikan path ini benar (kadang huruf kecil/besar berpengaruh)
 import '../MODEL/ModelProduct.dart';
 import '../MODEL/model_cart.dart';
 import '../MODEL/model_review.dart';
@@ -10,12 +10,16 @@ class ApiService {
   // =========================
   // Base URL untuk semua service
   // =========================
-  // ⚠️ PASTIKAN IP INI BENAR SESUAI DOCKER HOST / LAN ANDA
-  final String _ipAddress = '10.251.133.61';
+  // ⚠️ GANTI IP INI DENGAN IP KOMPUTER ANDA / docker host
+  final String _ipAddress = '10.192.194.149';
 
+  // Produk service (Node.js)
   late final String productBaseUrl = 'http://$_ipAddress:3000';
+  // Review service (Flask)
   late final String reviewBaseUrl = 'http://$_ipAddress:5002';
-  late final String cartBaseUrl = 'http://$_ipAddress:8000';
+  // Cart service (Lumen)
+  late final String cartBaseUrl = 'http://$_ipAddress:8001'; // <-- Pastikan Port 8001 (sesuai docker-compose)
+  // User service (Node.js)
   late final String userBaseUrl = 'http://$_ipAddress:4000';
 
   // ==================
@@ -25,10 +29,7 @@ class ApiService {
     try {
       final response = await http.get(Uri.parse('$productBaseUrl/products'));
       if (response.statusCode == 200) {
-        // Parsing manual list product agar lebih aman
-        final jsonData = json.decode(response.body);
-        final List data = jsonData['data'];
-        return data.map((x) => ModelProduct.fromJson(x)).toList();
+        return modelProductFromJson(response.body);
       } else {
         print('Error getProducts: ${response.statusCode}');
         return [];
@@ -127,12 +128,11 @@ class ApiService {
   // ==================
   // FUNGSI CART (BAGIAN YANG DIPERBAIKI)
   // ==================
-
   Future<ModelCart> getCart() async {
     try {
       final response = await http.get(Uri.parse('$cartBaseUrl/carts'));
       if (response.statusCode == 200) {
-        // PERBAIKAN: Menggunakan ModelCart.fromJson langsung
+        // FIX: Panggil ModelCart.fromJson langsung
         return ModelCart.fromJson(json.decode(response.body));
       } else {
         throw Exception('Gagal memuat keranjang');
@@ -147,8 +147,7 @@ class ApiService {
     try {
       final response = await http.get(Uri.parse('$cartBaseUrl/carts/$id'));
       if (response.statusCode == 200) {
-        // PERBAIKAN: Menggunakan ModelCartItem.fromJson langsung
-        // (Menghindari error jika helper function modelCartItemFromJson tidak ada)
+        // FIX: Panggil ModelCartItem.fromJson langsung agar tidak error
         return ModelCartItem.fromJson(json.decode(response.body));
       } else if (response.statusCode == 404) {
         throw Exception('Item tidak ditemukan');
@@ -202,7 +201,6 @@ class ApiService {
         final List<dynamic> data = json.decode(response.body);
         return data.map((e) => ModelUser.fromJson(e)).toList();
       } else {
-        print('Error getUsers: ${response.statusCode}');
         return [];
       }
     } catch (e) {
@@ -220,7 +218,6 @@ class ApiService {
         throw Exception('User not found');
       }
     } catch (e) {
-      print('Exception getUserById: $e');
       rethrow;
     }
   }
@@ -235,7 +232,6 @@ class ApiService {
       if (response.statusCode == 200 || response.statusCode == 201) {
         return ModelUser.fromJson(json.decode(response.body));
       } else {
-        print('Failed addUser: ${response.statusCode}');
         return null;
       }
     } catch (e) {
