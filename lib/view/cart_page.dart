@@ -1,7 +1,7 @@
-// --- FILE: lib/VIEW/cart_page.dart ---
+// --- FILE: lib/view/cart_page.dart ---
 import 'package:flutter/material.dart';
 import '../API/api_service.dart';
-import '../MODEL/model_cart.dart';
+import '../model/model_cart.dart';
 
 class CartPage extends StatefulWidget {
   const CartPage({super.key});

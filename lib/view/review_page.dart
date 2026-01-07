@@ -1,7 +1,7 @@
-// --- FILE: lib/VIEW/review_page.dart ---
+// --- FILE: lib/view/review_page.dart ---
 import 'package:flutter/material.dart';
 import '../API/api_service.dart';
-import '../MODEL/model_review.dart';
+import '../model/model_review.dart';
 
 class ReviewPage extends StatefulWidget {
   final int productId;

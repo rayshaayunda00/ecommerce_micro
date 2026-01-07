@@ -19,12 +19,14 @@ class ModelReview {
     required this.rating,
   });
 
-  factory ModelReview.fromJson(Map<String, dynamic> json) => ModelReview(
-    id: json["id"] ?? 0,
-    productId: json["product_id"],
-    review: json["review"],
-    rating: json["rating"],
-  );
+  factory ModelReview.fromJson(Map<String, dynamic> json) {
+    return ModelReview(
+      id: int.tryParse(json["id"].toString()) ?? 0, // Aman dari error
+      productId: int.tryParse(json["product_id"].toString()) ?? 0, // Aman
+      review: json["review"]?.toString() ?? "",
+      rating: int.tryParse(json["rating"].toString()) ?? 0, // Aman (String "5" jadi Int 5)
+    );
+  }
 
   Map<String, dynamic> toJson() => {
     "product_id": productId,

@@ -1,7 +1,6 @@
-// --- FILE: lib/VIEW/user_detail_page.dart ---
 import 'package:flutter/material.dart';
-import '../API/api_service.dart';
-import '../model/model_user.dart';
+import '../api/api_service.dart'; // folder api huruf kecil
+import '../model/model_user.dart'; // folder model huruf kecil
 
 class UserDetailPage extends StatefulWidget {
   final int userId;
@@ -18,6 +17,7 @@ class _UserDetailPageState extends State<UserDetailPage> {
   @override
   void initState() {
     super.initState();
+    // Ini sekarang akan berhasil karena tipe Future<ModelUser> dari api_service cocok dengan variabel ini
     futureUser = apiService.getUserById(widget.userId);
   }
 

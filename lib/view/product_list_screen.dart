@@ -1,11 +1,12 @@
-// --- FILE: lib/VIEW/product_list_screen.dart ---
+// --- FILE: lib/view/product_list_screen.dart ---
 import 'package:flutter/material.dart';
-import '../API/api_service.dart';
-import '../MODEL/ModelProduct.dart';
+// Pastikan import folder menggunakan huruf kecil sesuai perbaikan sebelumnya
+import '../api/api_service.dart';
+import '../model/model_product.dart';// Sesuaikan nama file kamu (model_product.dart atau model_product.dart)
 import 'cart_page.dart';
 import 'detail_product.dart';
 import 'user_list_page.dart';
-import 'product_form_page.dart'; // IMPORT PENTING: Untuk form tambah/edit
+import 'product_form_page.dart';
 
 class ProductListScreen extends StatefulWidget {
   const ProductListScreen({super.key});
@@ -24,19 +25,18 @@ class _ProductListScreenState extends State<ProductListScreen> {
     _loadData();
   }
 
-  // Fungsi untuk memuat ulang data (dipanggil saat init, refresh, atau setelah edit/delete)
   Future<void> _loadData() async {
     setState(() {
       futureProducts = apiService.getProducts();
     });
   }
 
-  // Fungsi Hapus Data
   void _deleteData(int id) async {
     bool confirm = await showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Hapus Produk?'),
+        backgroundColor: Colors.pink[50], // Background Dialog Pink Pastel
+        title: const Text('Hapus Produk?', style: TextStyle(color: Colors.pink)),
         content: const Text('Data akan dihapus permanen.'),
         actions: [
           TextButton(
@@ -49,13 +49,12 @@ class _ProductListScreenState extends State<ProductListScreen> {
           ),
         ],
       ),
-    ) ??
-        false;
+    ) ?? false;
 
     if (confirm) {
       bool success = await apiService.deleteProduct(id);
       if (success) {
-        _loadData(); // Refresh list setelah hapus
+        _loadData();
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Produk berhasil dihapus')),
@@ -75,7 +74,7 @@ class _ProductListScreenState extends State<ProductListScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
         content: Text('Menambahkan ke keranjang...'),
-        backgroundColor: Colors.blue,
+        backgroundColor: Colors.pink, // Loading warna Pink
         duration: Duration(milliseconds: 500),
       ),
     );
@@ -107,13 +106,16 @@ class _ProductListScreenState extends State<ProductListScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('Beli ${product.name}'),
+        backgroundColor: Colors.pink[50], // Dialog Background
+        title: Text('Beli ${product.name}', style: const TextStyle(color: Colors.pink)),
         content: TextField(
           controller: qtyController,
           keyboardType: TextInputType.number,
           decoration: const InputDecoration(
             labelText: 'Jumlah',
             border: OutlineInputBorder(),
+            focusedBorder: OutlineInputBorder(borderSide: BorderSide(color: Colors.pink)),
+            floatingLabelStyle: TextStyle(color: Colors.pink),
           ),
         ),
         actions: [
@@ -122,6 +124,10 @@ class _ProductListScreenState extends State<ProductListScreen> {
             child: const Text('Batal', style: TextStyle(color: Colors.grey)),
           ),
           ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.pink, // Tombol Pink
+              foregroundColor: Colors.white,
+            ),
             onPressed: () {
               int qty = int.tryParse(qtyController.text) ?? 1;
               Navigator.pop(context);
@@ -137,9 +143,12 @@ class _ProductListScreenState extends State<ProductListScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.pink[50],
+      backgroundColor: Colors.pink[50], // BACKGROUND PINK PASTEL
       appBar: AppBar(
         title: const Text('Daftar Produk'),
+        backgroundColor: Colors.pink, // APPBAR PINK
+        foregroundColor: Colors.white, // TEXT PUTIH
+        elevation: 0,
         actions: [
           IconButton(
             icon: const Icon(Icons.people_alt_outlined),
@@ -166,25 +175,24 @@ class _ProductListScreenState extends State<ProductListScreen> {
       ),
       // --- TOMBOL TAMBAH DATA (FAB) ---
       floatingActionButton: FloatingActionButton(
-        backgroundColor: Colors.pink,
+        backgroundColor: Colors.pink, // FAB PINK
         child: const Icon(Icons.add, color: Colors.white),
         onPressed: () async {
-          // Navigasi ke Form Tambah
           bool? refresh = await Navigator.push(
             context,
             MaterialPageRoute(builder: (context) => const ProductFormPage()),
           );
-          // Jika kembali dengan nilai true, refresh data
           if (refresh == true) _loadData();
         },
       ),
       body: RefreshIndicator(
+        color: Colors.pink, // Loading Spinner Pink
         onRefresh: _loadData,
         child: FutureBuilder<List<ModelProduct>>(
           future: futureProducts,
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
-              return const Center(child: CircularProgressIndicator());
+              return const Center(child: CircularProgressIndicator(color: Colors.pink));
             }
             if (snapshot.hasError) {
               return Center(
@@ -201,22 +209,28 @@ class _ProductListScreenState extends State<ProductListScreen> {
               itemBuilder: (context, index) {
                 final p = products[index];
                 return Card(
+                  // Membuat card rounded
                   shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12)),
+                      borderRadius: BorderRadius.circular(15)),
                   color: Colors.white,
-                  elevation: 4,
+                  surfaceTintColor: Colors.white,
+                  elevation: 2,
                   margin: const EdgeInsets.only(bottom: 12),
                   child: Padding(
                     padding: const EdgeInsets.all(16.0),
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Icon Gambar Produk
-                        CircleAvatar(
-                          radius: 40,
-                          backgroundColor: Colors.pink[100],
-                          child: Icon(Icons.shopping_bag_outlined,
-                              size: 40, color: Colors.pink[700]),
+                        // Icon Gambar Produk (Styling Pink Muda)
+                        Container(
+                          width: 80,
+                          height: 80,
+                          decoration: BoxDecoration(
+                            color: Colors.pink[50], // Background icon Pink Muda
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: const Icon(Icons.shopping_bag_outlined,
+                              size: 40, color: Colors.pink), // Icon Pink
                         ),
                         const SizedBox(width: 16),
                         // Konten Teks & Tombol
@@ -224,16 +238,17 @@ class _ProductListScreenState extends State<ProductListScreen> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              // Baris Judul & Tombol Admin (Edit/Delete)
+                              // Baris Judul & Tombol Admin
                               Row(
                                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
                                   Expanded(
                                     child: Text(
                                       p.name,
-                                      style: const TextStyle(
+                                      style: TextStyle(
                                           fontSize: 18,
-                                          fontWeight: FontWeight.bold),
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.pink[900]), // Judul agak gelap
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
                                     ),
@@ -253,7 +268,7 @@ class _ProductListScreenState extends State<ProductListScreen> {
                                     child: const Padding(
                                       padding: EdgeInsets.all(4.0),
                                       child: Icon(Icons.edit,
-                                          color: Colors.blue, size: 20),
+                                          color: Colors.orange, size: 20),
                                     ),
                                   ),
                                   // Tombol Delete
@@ -269,15 +284,16 @@ class _ProductListScreenState extends State<ProductListScreen> {
                               ),
                               const SizedBox(height: 4),
                               Text(p.description,
+                                  style: TextStyle(color: Colors.grey[700]),
                                   maxLines: 2, overflow: TextOverflow.ellipsis),
                               const SizedBox(height: 8),
                               Text('Rp ${p.price}',
-                                  style: TextStyle(
+                                  style: const TextStyle(
                                       fontSize: 16,
                                       fontWeight: FontWeight.bold,
-                                      color: Colors.pink[700])),
+                                      color: Colors.pink)), // Harga Pink
                               const SizedBox(height: 12),
-                              // Baris Tombol User (Detail & Beli)
+                              // Baris Tombol User
                               Row(
                                 children: [
                                   Expanded(
@@ -290,13 +306,14 @@ class _ProductListScreenState extends State<ProductListScreen> {
                                                 DetailProductPage(product: p),
                                           ),
                                         );
-                                        // Refresh saat kembali jaga-jaga ada perubahan
                                         _loadData();
                                       },
                                       icon: const Icon(Icons.info_outline,
                                           size: 18),
                                       label: const Text('Detail'),
                                       style: OutlinedButton.styleFrom(
+                                        foregroundColor: Colors.pink, // Text Pink
+                                        side: const BorderSide(color: Colors.pink),
                                         padding: const EdgeInsets.symmetric(
                                             vertical: 0, horizontal: 8),
                                       ),
@@ -310,6 +327,8 @@ class _ProductListScreenState extends State<ProductListScreen> {
                                           size: 18),
                                       label: const Text('Beli'),
                                       style: ElevatedButton.styleFrom(
+                                        backgroundColor: Colors.pink, // Background Pink
+                                        foregroundColor: Colors.white,
                                         padding: const EdgeInsets.symmetric(
                                             vertical: 0, horizontal: 8),
                                       ),

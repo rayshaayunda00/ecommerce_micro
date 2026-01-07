@@ -1,7 +1,8 @@
-// --- FILE: lib/VIEW/product_form_page.dart ---
+// --- FILE: lib/view/product_form_page.dart ---
 import 'package:flutter/material.dart';
-import '../MODEL/ModelProduct.dart';
-import '../API/api_service.dart';
+// Pastikan import menggunakan huruf kecil
+import '../model/model_product.dart';
+import '../api/api_service.dart';
 
 class ProductFormPage extends StatefulWidget {
   final ModelProduct? product; // Null = Tambah, Ada isi = Edit
@@ -67,12 +68,12 @@ class _ProductFormPageState extends State<ProductFormPage> {
     }
   }
 
-  // Helper Custom Decoration
+  // Helper Custom Decoration (Tema Pink)
   InputDecoration _buildInputDecoration(String label, IconData icon, {String? prefixText}) {
     return InputDecoration(
       labelText: label,
-      labelStyle: TextStyle(color: Colors.pink[800]),
-      prefixIcon: Icon(icon, color: Colors.pink),
+      labelStyle: const TextStyle(color: Colors.pink), // Label Pink
+      prefixIcon: Icon(icon, color: Colors.pink), // Icon Pink
       prefixText: prefixText,
       prefixStyle: const TextStyle(color: Colors.pink, fontWeight: FontWeight.bold),
       border: OutlineInputBorder(
@@ -81,11 +82,11 @@ class _ProductFormPageState extends State<ProductFormPage> {
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(15),
-        borderSide: BorderSide(color: Colors.pink.shade100),
+        borderSide: BorderSide(color: Colors.pink.shade200), // Border Pink Muda
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(15),
-        borderSide: const BorderSide(color: Colors.pink, width: 2),
+        borderSide: const BorderSide(color: Colors.pink, width: 2), // Border Pink Tebal
       ),
       filled: true,
       fillColor: Colors.white,
@@ -101,14 +102,14 @@ class _ProductFormPageState extends State<ProductFormPage> {
       // Menutup keyboard saat tap di luar form
       onTap: () => FocusScope.of(context).unfocus(),
       child: Scaffold(
-        backgroundColor: Colors.pink[50],
+        backgroundColor: Colors.pink[50], // BACKGROUND PINK PASTEL
         appBar: AppBar(
           title: Text(
             isEditing ? 'Edit Produk' : 'Tambah Produk',
             style: const TextStyle(fontWeight: FontWeight.bold),
           ),
           centerTitle: true,
-          backgroundColor: Colors.pink,
+          backgroundColor: Colors.pink, // APPBAR PINK
           foregroundColor: Colors.white,
           elevation: 0,
           shape: const RoundedRectangleBorder(
@@ -133,13 +134,13 @@ class _ProductFormPageState extends State<ProductFormPage> {
                 child: Icon(
                   isEditing ? Icons.edit_note_rounded : Icons.add_shopping_cart_rounded,
                   size: 60,
-                  color: Colors.pink,
+                  color: Colors.pink, // ICON PINK
                 ),
               ),
 
               Text(
                 isEditing ? "Ubah detail produk Anda" : "Masukkan informasi produk baru",
-                style: TextStyle(color: Colors.pink[800], fontSize: 16, fontWeight: FontWeight.w500),
+                style: TextStyle(color: Colors.pink[900], fontSize: 16, fontWeight: FontWeight.w500),
               ),
               const SizedBox(height: 25),
 
@@ -152,7 +153,7 @@ class _ProductFormPageState extends State<ProductFormPage> {
                     TextFormField(
                       controller: _nameController,
                       decoration: _buildInputDecoration('Nama Produk', Icons.label_outline),
-                      textCapitalization: TextCapitalization.words, // Huruf besar tiap kata
+                      textCapitalization: TextCapitalization.words,
                       textInputAction: TextInputAction.next,
                       validator: (val) => val!.isEmpty ? 'Nama produk wajib diisi' : null,
                     ),
@@ -178,7 +179,7 @@ class _ProductFormPageState extends State<ProductFormPage> {
                       decoration: _buildInputDecoration('Deskripsi', Icons.description_outlined),
                       maxLines: 4,
                       minLines: 2,
-                      textCapitalization: TextCapitalization.sentences, // Huruf besar awal kalimat
+                      textCapitalization: TextCapitalization.sentences,
                       textInputAction: TextInputAction.newline,
                       validator: (val) => val!.isEmpty ? 'Deskripsi tidak boleh kosong' : null,
                     ),
@@ -205,7 +206,7 @@ class _ProductFormPageState extends State<ProductFormPage> {
                           style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
                         ),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.pink,
+                          backgroundColor: Colors.pink, // TOMBOL PINK
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
                           elevation: 5,
                           shadowColor: Colors.pink.withOpacity(0.4),

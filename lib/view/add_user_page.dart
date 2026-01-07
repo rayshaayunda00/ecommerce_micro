@@ -1,6 +1,7 @@
-// --- FILE: lib/VIEW/add_user_page.dart ---
+// --- FILE: lib/view/add_user_page.dart ---
 import 'package:flutter/material.dart';
 import '../API/api_service.dart';
+// Perbaikan: Hanya gunakan satu import yang benar (folder MODEL huruf besar)
 import '../model/model_user.dart';
 
 class AddUserPage extends StatefulWidget {
@@ -14,7 +15,7 @@ class _AddUserPageState extends State<AddUserPage> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
-  final TextEditingController _roleController = TextEditingController(); // Default kosong agar user mengisi
+  final TextEditingController _roleController = TextEditingController();
 
   bool _isLoading = false;
   final ApiService apiService = ApiService();
@@ -39,17 +40,22 @@ class _AddUserPageState extends State<AddUserPage> {
 
       try {
         ModelUser? createdUser = await apiService.addUser(newUser);
-        setState(() => _isLoading = false);
+
+        // Cek mounted sebelum setState (best practice)
+        if (mounted) {
+          setState(() => _isLoading = false);
+        }
 
         if (createdUser != null) {
-          // Berhasil, kembali ke halaman list dengan membawa nilai true
           if (mounted) Navigator.pop(context, true);
         } else {
-          _showErrorSnackBar('Gagal menambahkan user. Cek data input.');
+          if (mounted) _showErrorSnackBar('Gagal menambahkan user. Cek data input.');
         }
       } catch (e) {
-        setState(() => _isLoading = false);
-        _showErrorSnackBar('Terjadi kesalahan server: $e');
+        if (mounted) {
+          setState(() => _isLoading = false);
+          _showErrorSnackBar('Terjadi kesalahan server: $e');
+        }
       }
     }
   }
@@ -57,6 +63,24 @@ class _AddUserPageState extends State<AddUserPage> {
   void _showErrorSnackBar(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(message), backgroundColor: Colors.red),
+    );
+  }
+
+  InputDecoration _inputDecoration(String label, IconData icon) {
+    return InputDecoration(
+      labelText: label,
+      prefixIcon: Icon(icon, color: Colors.pink),
+      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(color: Colors.grey.shade300),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: Colors.pink, width: 2),
+      ),
+      filled: true,
+      fillColor: Colors.pink.shade50.withOpacity(0.5),
     );
   }
 
@@ -79,8 +103,6 @@ class _AddUserPageState extends State<AddUserPage> {
                 children: [
                   const Icon(Icons.person_add_alt_1, size: 60, color: Colors.pink),
                   const SizedBox(height: 24),
-
-                  // Input Nama
                   TextFormField(
                     controller: _nameController,
                     decoration: _inputDecoration('Nama Lengkap', Icons.person),
@@ -88,8 +110,6 @@ class _AddUserPageState extends State<AddUserPage> {
                     textInputAction: TextInputAction.next,
                   ),
                   const SizedBox(height: 16),
-
-                  // Input Email
                   TextFormField(
                     controller: _emailController,
                     decoration: _inputDecoration('Email', Icons.email),
@@ -102,8 +122,6 @@ class _AddUserPageState extends State<AddUserPage> {
                     textInputAction: TextInputAction.next,
                   ),
                   const SizedBox(height: 16),
-
-                  // Input Role
                   TextFormField(
                     controller: _roleController,
                     decoration: _inputDecoration('Role (misal: customer, admin)', Icons.admin_panel_settings),
@@ -112,8 +130,6 @@ class _AddUserPageState extends State<AddUserPage> {
                     onFieldSubmitted: (_) => _submitForm(),
                   ),
                   const SizedBox(height: 32),
-
-                  // Tombol Submit
                   ElevatedButton(
                     onPressed: _isLoading ? null : _submitForm,
                     style: ElevatedButton.styleFrom(
@@ -130,24 +146,6 @@ class _AddUserPageState extends State<AddUserPage> {
           ),
         ),
       ),
-    );
-  }
-
-  InputDecoration _inputDecoration(String label, IconData icon) {
-    return InputDecoration(
-      labelText: label,
-      prefixIcon: Icon(icon, color: Colors.pink),
-      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-      enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide(color: Colors.grey.shade300),
-      ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: Colors.pink, width: 2),
-      ),
-      filled: true,
-      fillColor: Colors.pink.shade50.withOpacity(0.5),
     );
   }
 }

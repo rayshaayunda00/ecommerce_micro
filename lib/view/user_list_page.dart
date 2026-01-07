@@ -1,6 +1,7 @@
-// --- FILE: lib/VIEW/user_list_page.dart ---
+// --- FILE: lib/view/user_list_page.dart ---
 import 'package:flutter/material.dart';
 import '../API/api_service.dart';
+// Perbaikan: Path folder MODEL huruf besar
 import '../model/model_user.dart';
 import 'add_user_page.dart';
 import 'user_detail_page.dart';

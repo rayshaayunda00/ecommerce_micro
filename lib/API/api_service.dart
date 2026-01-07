@@ -1,41 +1,35 @@
-// --- FILE: lib/API/api_service.dart ---
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import '../model/model_user.dart'; // Pastikan path ini benar (kadang huruf kecil/besar berpengaruh)
-import '../MODEL/ModelProduct.dart';
-import '../MODEL/model_cart.dart';
-import '../MODEL/model_review.dart';
+
+// PERBAIKAN IMPORT (Gunakan huruf kecil 'model')
+import '../model/model_user.dart';
+import '../model/model_product.dart';
+import '../model/model_cart.dart';
+import '../model/model_review.dart';
 
 class ApiService {
   // =========================
-  // Base URL untuk semua service
+  // KONFIGURASI IP & PORT
   // =========================
-  // ⚠️ GANTI IP INI DENGAN IP KOMPUTER ANDA / docker host
-  final String _ipAddress = '10.192.194.149';
+  final String _ipAddress = 'localhost'; // Ganti dengan IP LAN jika pakai HP fisik (misal: 192.168.1.x)
 
-  // Produk service (Node.js)
-  late final String productBaseUrl = 'http://$_ipAddress:3000';
-  // Review service (Flask)
-  late final String reviewBaseUrl = 'http://$_ipAddress:5002';
-  // Cart service (Lumen)
-  late final String cartBaseUrl = 'http://$_ipAddress:8001'; // <-- Pastikan Port 8001 (sesuai docker-compose)
-  // User service (Node.js)
-  late final String userBaseUrl = 'http://$_ipAddress:4000';
+  late final String productBaseUrl = 'http://$_ipAddress:3000'; // MySQL
+  late final String userBaseUrl    = 'http://$_ipAddress:3001'; // PostgreSQL
+  late final String reviewBaseUrl  = 'http://$_ipAddress:5002'; // MongoDB
+  late final String cartBaseUrl    = 'http://$_ipAddress:8001'; // Lumen
 
   // ==================
-  // FUNGSI PRODUK
+  // 1. FUNGSI PRODUK (MySQL)
   // ==================
   Future<List<ModelProduct>> getProducts() async {
     try {
       final response = await http.get(Uri.parse('$productBaseUrl/products'));
       if (response.statusCode == 200) {
         return modelProductFromJson(response.body);
-      } else {
-        print('Error getProducts: ${response.statusCode}');
-        return [];
       }
+      return [];
     } catch (e) {
-      print('Exception getProducts: $e');
+      print('Error getProducts: $e');
       return [];
     }
   }
@@ -49,7 +43,6 @@ class ApiService {
       );
       return response.statusCode == 200 || response.statusCode == 201;
     } catch (e) {
-      print('Exception addProduct: $e');
       return false;
     }
   }
@@ -63,7 +56,6 @@ class ApiService {
       );
       return response.statusCode == 200;
     } catch (e) {
-      print('Exception updateProduct: $e');
       return false;
     }
   }
@@ -73,40 +65,31 @@ class ApiService {
       final response = await http.delete(Uri.parse('$productBaseUrl/products/$id'));
       return response.statusCode == 200;
     } catch (e) {
-      print('Exception deleteProduct: $e');
       return false;
     }
   }
 
   // ==================
-  // FUNGSI REVIEW
+  // 2. FUNGSI REVIEW (MongoDB)
   // ==================
-  Future<List<ModelReview>> getAllReviews() async {
-    try {
-      final response = await http.get(Uri.parse('$reviewBaseUrl/reviews'));
-      if (response.statusCode == 200) {
-        final List<dynamic> data = json.decode(response.body);
-        return data.map((e) => ModelReview.fromJson(e)).toList();
-      } else {
-        return [];
-      }
-    } catch (e) {
-      print('Exception getAllReviews: $e');
-      return [];
-    }
-  }
-
   Future<List<ModelReview>> getReviewsByProductId(int productId) async {
     try {
       final response = await http.get(Uri.parse('$reviewBaseUrl/reviews/product/$productId'));
+
       if (response.statusCode == 200) {
-        final List<dynamic> data = json.decode(response.body);
-        return data.map((e) => ModelReview.fromJson(e)).toList();
-      } else {
-        return [];
+        final dynamic jsonResponse = json.decode(response.body);
+
+        if (jsonResponse is Map && jsonResponse.containsKey('data')) {
+          final List<dynamic> data = jsonResponse['data'];
+          return data.map((e) => ModelReview.fromJson(e)).toList();
+        }
+        else if (jsonResponse is List) {
+          return jsonResponse.map((e) => ModelReview.fromJson(e)).toList();
+        }
       }
+      return [];
     } catch (e) {
-      print('Exception getReviewsByProductId: $e');
+      print('Exception getReviews: $e');
       return [];
     }
   }
@@ -115,10 +98,13 @@ class ApiService {
     try {
       final response = await http.post(
         Uri.parse('$reviewBaseUrl/reviews'),
-        headers: {'Content-Type': 'application/json; charset=UTF-8'},
-        body: json.encode(review.toJson()),
+        body: {
+          'product_id': review.productId.toString(),
+          'review': review.review,
+          'rating': review.rating.toString(),
+        },
       );
-      return response.statusCode == 201;
+      return response.statusCode == 201 || response.statusCode == 200;
     } catch (e) {
       print('Exception addReview: $e');
       return false;
@@ -126,37 +112,31 @@ class ApiService {
   }
 
   // ==================
-  // FUNGSI CART (BAGIAN YANG DIPERBAIKI)
+  // 3. FUNGSI CART (Lumen)
   // ==================
   Future<ModelCart> getCart() async {
     try {
       final response = await http.get(Uri.parse('$cartBaseUrl/carts'));
       if (response.statusCode == 200) {
-        // FIX: Panggil ModelCart.fromJson langsung
         return ModelCart.fromJson(json.decode(response.body));
       } else {
-        throw Exception('Gagal memuat keranjang');
+        return ModelCart(items: [], total: 0);
       }
     } catch (e) {
       print('Exception getCart: $e');
-      rethrow;
+      return ModelCart(items: [], total: 0);
     }
   }
 
-  Future<ModelCartItem> getCartItem(int id) async {
+  Future<ModelCartItem?> getCartItem(int id) async {
     try {
       final response = await http.get(Uri.parse('$cartBaseUrl/carts/$id'));
       if (response.statusCode == 200) {
-        // FIX: Panggil ModelCartItem.fromJson langsung agar tidak error
         return ModelCartItem.fromJson(json.decode(response.body));
-      } else if (response.statusCode == 404) {
-        throw Exception('Item tidak ditemukan');
-      } else {
-        throw Exception('Gagal memuat detail item keranjang');
       }
+      return null;
     } catch (e) {
-      print('Exception getCartItem: $e');
-      rethrow;
+      return null;
     }
   }
 
@@ -165,26 +145,23 @@ class ApiService {
       final response = await http.delete(Uri.parse('$cartBaseUrl/carts/$id'));
       return response.statusCode == 200;
     } catch (e) {
-      print('Exception deleteCartItem: $e');
       return false;
     }
   }
 
   Future<bool> addItemToCart(ModelProduct product, int quantity) async {
     try {
-      final url = Uri.parse('$cartBaseUrl/carts');
-      final body = json.encode({
-        'id': product.id,
-        'name': product.name,
-        'price': product.price,
-        'quantity': quantity,
-      });
       final response = await http.post(
-        url,
-        headers: {'Content-Type': 'application/json; charset=UTF-8'},
-        body: body,
+        Uri.parse('$cartBaseUrl/carts'),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({
+          'id': product.id,
+          'name': product.name,
+          'price': product.price,
+          'quantity': quantity,
+        }),
       );
-      return response.statusCode == 201;
+      return response.statusCode == 201 || response.statusCode == 200;
     } catch (e) {
       print('Exception addItemToCart: $e');
       return false;
@@ -192,7 +169,7 @@ class ApiService {
   }
 
   // ==================
-  // FUNGSI USER
+  // 4. FUNGSI USER (PostgreSQL)
   // ==================
   Future<List<ModelUser>> getUsers() async {
     try {
@@ -200,9 +177,8 @@ class ApiService {
       if (response.statusCode == 200) {
         final List<dynamic> data = json.decode(response.body);
         return data.map((e) => ModelUser.fromJson(e)).toList();
-      } else {
-        return [];
       }
+      return [];
     } catch (e) {
       print('Exception getUsers: $e');
       return [];
@@ -227,8 +203,13 @@ class ApiService {
       final response = await http.post(
         Uri.parse("$userBaseUrl/users"),
         headers: {"Content-Type": "application/json"},
-        body: json.encode(user.toJson()),
+        body: json.encode({
+          "name": user.name,
+          "email": user.email,
+          "role": user.role
+        }),
       );
+
       if (response.statusCode == 200 || response.statusCode == 201) {
         return ModelUser.fromJson(json.decode(response.body));
       } else {
@@ -236,6 +217,23 @@ class ApiService {
       }
     } catch (e) {
       print('Exception addUser: $e');
+      return null;
+    }
+  }
+
+  Future<ModelUser?> login(String email) async {
+    try {
+      List<ModelUser> users = await getUsers();
+      try {
+        final user = users.firstWhere(
+                (u) => u.email.toLowerCase().trim() == email.toLowerCase().trim()
+        );
+        return user;
+      } catch (e) {
+        return null;
+      }
+    } catch (e) {
+      print("Login Error: $e");
       return null;
     }
   }

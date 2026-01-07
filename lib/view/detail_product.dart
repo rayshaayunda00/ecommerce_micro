@@ -1,10 +1,11 @@
-// --- FILE: lib/VIEW/detail_product.dart ---
+// --- FILE: lib/view/detail_product.dart ---
 import 'package:flutter/material.dart';
-import '../MODEL/ModelProduct.dart';
-import '../API/api_service.dart';
+// Pastikan import menggunakan huruf kecil
+import '../model/model_product.dart';
+import '../api/api_service.dart';
 import 'review_page.dart';
-import 'cart_page.dart';        // Import halaman keranjang
-import 'product_form_page.dart'; // Import halaman edit form
+import 'cart_page.dart';
+import 'product_form_page.dart';
 
 class DetailProductPage extends StatefulWidget {
   final ModelProduct product;
@@ -17,16 +18,15 @@ class DetailProductPage extends StatefulWidget {
 class _DetailProductPageState extends State<DetailProductPage> {
   final ApiService apiService = ApiService();
 
-  // Variabel untuk data produk (agar bisa di-refresh setelah edit)
+  // Variabel data
   late ModelProduct currentProduct;
-
   double averageRating = 0.0;
   int reviewCount = 0;
 
   @override
   void initState() {
     super.initState();
-    currentProduct = widget.product; // Inisialisasi data awal
+    currentProduct = widget.product;
     _loadReviews();
   }
 
@@ -54,7 +54,10 @@ class _DetailProductPageState extends State<DetailProductPage> {
   // --- LOGIC: Add to Cart ---
   void _addToCart(int quantity) async {
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Menambahkan ke keranjang...'), duration: Duration(milliseconds: 500)),
+      const SnackBar(
+          content: Text('Menambahkan ke keranjang...'),
+          backgroundColor: Colors.pink, // Warna Pink
+          duration: Duration(milliseconds: 500)),
     );
 
     bool success = await apiService.addItemToCart(currentProduct, quantity);
@@ -81,21 +84,30 @@ class _DetailProductPageState extends State<DetailProductPage> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Masukkan Keranjang'),
+        backgroundColor: Colors.pink[50], // Background Dialog Pink Pastel
+        title: const Text('Masukkan Keranjang', style: TextStyle(color: Colors.pink)),
         content: TextField(
           controller: qtyController,
           keyboardType: TextInputType.number,
           decoration: const InputDecoration(
             labelText: 'Jumlah',
+            labelStyle: TextStyle(color: Colors.pink),
+            focusedBorder: OutlineInputBorder(
+              borderSide: BorderSide(color: Colors.pink),
+            ),
             border: OutlineInputBorder(),
           ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Batal'),
+            child: const Text('Batal', style: TextStyle(color: Colors.grey)),
           ),
           ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.pink, // Tombol Pink
+              foregroundColor: Colors.white,
+            ),
             onPressed: () {
               int qty = int.tryParse(qtyController.text) ?? 1;
               Navigator.pop(ctx);
@@ -110,17 +122,13 @@ class _DetailProductPageState extends State<DetailProductPage> {
 
   // --- LOGIC: Edit Product ---
   void _editProduct() async {
-    // Navigasi ke Form Edit
     await Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => ProductFormPage(product: currentProduct),
       ),
     );
-    // Refresh halaman ini belum bisa full reload data baru dari API kecuali di-pop,
-    // tapi minimal kita bisa memberi sinyal kembali ke list.
-    // Untuk update data di sini secara real-time, idealnya panggil getProductById (tapi di API service belum ada).
-    // Jadi kita kembali ke list saja agar data refresh.
+    // Kembali ke list agar data refresh
     if (mounted) {
       Navigator.pop(context, true);
     }
@@ -151,23 +159,24 @@ class _DetailProductPageState extends State<DetailProductPage> {
         ),
       ),
     );
-    _loadReviews(); // reload rating setelah kembali
+    _loadReviews();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.pink[50],
+      backgroundColor: Colors.pink[50], // BACKGROUND PINK PASTEL
       appBar: AppBar(
         title: const Text('Detail Produk'),
+        backgroundColor: Colors.pink, // APPBAR PINK
+        foregroundColor: Colors.white,
+        elevation: 0,
         actions: [
-          // Tombol Edit
           IconButton(
             icon: const Icon(Icons.edit),
             tooltip: 'Edit Produk',
             onPressed: _editProduct,
           ),
-          // Tombol Lihat Keranjang
           IconButton(
             icon: const Icon(Icons.shopping_cart),
             tooltip: 'Lihat Keranjang',
@@ -181,18 +190,25 @@ class _DetailProductPageState extends State<DetailProductPage> {
         padding: const EdgeInsets.all(16),
         child: Card(
           elevation: 4,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
           color: Colors.white,
+          surfaceTintColor: Colors.white,
           child: Padding(
             padding: const EdgeInsets.all(24),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 // Gambar Placeholder
-                CircleAvatar(
-                  radius: 60,
-                  backgroundColor: Colors.pink[100],
-                  child: const Icon(Icons.shopping_bag_outlined, size: 70, color: Colors.pink),
+                Center(
+                  child: Container(
+                    width: 120,
+                    height: 120,
+                    decoration: BoxDecoration(
+                      color: Colors.pink[50], // Lingkaran Pink Muda
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.shopping_bag_outlined, size: 60, color: Colors.pink),
+                  ),
                 ),
                 const SizedBox(height: 24),
 
@@ -200,7 +216,7 @@ class _DetailProductPageState extends State<DetailProductPage> {
                 Text(
                     currentProduct.name,
                     textAlign: TextAlign.center,
-                    style: const TextStyle(fontSize: 26, fontWeight: FontWeight.bold)
+                    style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold, color: Colors.pink[900])
                 ),
                 const SizedBox(height: 8),
 
@@ -208,7 +224,7 @@ class _DetailProductPageState extends State<DetailProductPage> {
                 Text(
                     "Rp ${currentProduct.price}",
                     textAlign: TextAlign.center,
-                    style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.pink[700])
+                    style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.pink)
                 ),
                 const SizedBox(height: 16),
 
@@ -224,15 +240,15 @@ class _DetailProductPageState extends State<DetailProductPage> {
                 ),
 
                 const SizedBox(height: 24),
-                const Divider(),
+                Divider(color: Colors.pink[100]), // Divider Pink Muda
                 const SizedBox(height: 16),
 
                 // Deskripsi
-                const Text("Deskripsi Produk", style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
+                const Text("Deskripsi Produk", style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: Colors.pink)),
                 const SizedBox(height: 8),
                 Text(
                     currentProduct.description,
-                    style: const TextStyle(fontSize: 16, height: 1.5)
+                    style: TextStyle(fontSize: 16, height: 1.5, color: Colors.grey[800])
                 ),
 
                 const SizedBox(height: 32),
@@ -247,7 +263,10 @@ class _DetailProductPageState extends State<DetailProductPage> {
                         label: const Text("Review"),
                         onPressed: _openReviewPage,
                         style: OutlinedButton.styleFrom(
+                          foregroundColor: Colors.pink, // Text Pink
+                          side: const BorderSide(color: Colors.pink),
                           padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                         ),
                       ),
                     ),
@@ -259,7 +278,10 @@ class _DetailProductPageState extends State<DetailProductPage> {
                         label: const Text("Beli"),
                         onPressed: _showAddToCartDialog,
                         style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.pink, // Background Pink
+                          foregroundColor: Colors.white,
                           padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                         ),
                       ),
                     ),
