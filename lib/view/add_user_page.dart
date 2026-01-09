@@ -1,8 +1,6 @@
-// --- FILE: lib/view/add_user_page.dart ---
 import 'package:flutter/material.dart';
 import '../API/api_service.dart';
-// Perbaikan: Hanya gunakan satu import yang benar (folder MODEL huruf besar)
-import '../model/model_user.dart';
+import '../model/model_user.dart'; // Pastikan path import ini benar
 
 class AddUserPage extends StatefulWidget {
   const AddUserPage({super.key});
@@ -13,9 +11,16 @@ class AddUserPage extends StatefulWidget {
 
 class _AddUserPageState extends State<AddUserPage> {
   final _formKey = GlobalKey<FormState>();
+
+  // Controller Input
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
-  final TextEditingController _roleController = TextEditingController();
+
+  // GANTI Controller Role menjadi Variabel Pilihan
+  String? _selectedRole = 'customer'; // Default value
+
+  // Daftar Pilihan Role
+  final List<String> _roleOptions = ['customer', 'admin', 'seller'];
 
   bool _isLoading = false;
   final ApiService apiService = ApiService();
@@ -24,7 +29,7 @@ class _AddUserPageState extends State<AddUserPage> {
   void dispose() {
     _nameController.dispose();
     _emailController.dispose();
-    _roleController.dispose();
+    // _roleController tidak perlu didispose karena sudah dihapus
     super.dispose();
   }
 
@@ -32,24 +37,25 @@ class _AddUserPageState extends State<AddUserPage> {
     if (_formKey.currentState!.validate()) {
       setState(() => _isLoading = true);
 
+      // Buat User Baru
       ModelUser newUser = ModelUser(
+        id: 0, // PENTING: Default 0 agar tidak error di Model
         name: _nameController.text.trim(),
         email: _emailController.text.trim(),
-        role: _roleController.text.trim(),
+        role: _selectedRole!, // Ambil dari Dropdown
       );
 
       try {
         ModelUser? createdUser = await apiService.addUser(newUser);
 
-        // Cek mounted sebelum setState (best practice)
         if (mounted) {
           setState(() => _isLoading = false);
         }
 
         if (createdUser != null) {
-          if (mounted) Navigator.pop(context, true);
+          if (mounted) Navigator.pop(context, true); // Kembali & Refresh List
         } else {
-          if (mounted) _showErrorSnackBar('Gagal menambahkan user. Cek data input.');
+          if (mounted) _showErrorSnackBar('Gagal menambahkan user. Email mungkin duplikat.');
         }
       } catch (e) {
         if (mounted) {
@@ -66,6 +72,7 @@ class _AddUserPageState extends State<AddUserPage> {
     );
   }
 
+  // Helper untuk Desain Input
   InputDecoration _inputDecoration(String label, IconData icon) {
     return InputDecoration(
       labelText: label,
@@ -91,9 +98,11 @@ class _AddUserPageState extends State<AddUserPage> {
       appBar: AppBar(
         title: const Text('Tambah User Baru'),
       ),
-      body: SingleChildScrollView(
+      body: SingleChildScrollView( // Agar bisa discroll di HP kecil
         padding: const EdgeInsets.all(20.0),
         child: Card(
+          elevation: 4,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           child: Padding(
             padding: const EdgeInsets.all(24.0),
             child: Form(
@@ -103,6 +112,8 @@ class _AddUserPageState extends State<AddUserPage> {
                 children: [
                   const Icon(Icons.person_add_alt_1, size: 60, color: Colors.pink),
                   const SizedBox(height: 24),
+
+                  // 1. INPUT NAMA
                   TextFormField(
                     controller: _nameController,
                     decoration: _inputDecoration('Nama Lengkap', Icons.person),
@@ -110,6 +121,8 @@ class _AddUserPageState extends State<AddUserPage> {
                     textInputAction: TextInputAction.next,
                   ),
                   const SizedBox(height: 16),
+
+                  // 2. INPUT EMAIL
                   TextFormField(
                     controller: _emailController,
                     decoration: _inputDecoration('Email', Icons.email),
@@ -122,19 +135,39 @@ class _AddUserPageState extends State<AddUserPage> {
                     textInputAction: TextInputAction.next,
                   ),
                   const SizedBox(height: 16),
-                  TextFormField(
-                    controller: _roleController,
-                    decoration: _inputDecoration('Role (misal: customer, admin)', Icons.admin_panel_settings),
-                    validator: (value) => value == null || value.trim().isEmpty ? 'Role wajib diisi' : null,
-                    textInputAction: TextInputAction.done,
-                    onFieldSubmitted: (_) => _submitForm(),
+
+                  // 3. INPUT ROLE (DROPDOWN)
+                  DropdownButtonFormField<String>(
+                    value: _selectedRole,
+                    decoration: _inputDecoration('Pilih Role', Icons.admin_panel_settings),
+                    items: _roleOptions.map((String role) {
+                      return DropdownMenuItem<String>(
+                        value: role,
+                        child: Text(
+                          role.toUpperCase(), // Biar tampilannya kapital (CUSTOMER)
+                          style: const TextStyle(fontWeight: FontWeight.w500),
+                        ),
+                      );
+                    }).toList(),
+                    onChanged: (String? newValue) {
+                      setState(() {
+                        _selectedRole = newValue;
+                      });
+                    },
+                    validator: (value) => value == null ? 'Pilih salah satu role' : null,
                   ),
+
                   const SizedBox(height: 32),
+
+                  // TOMBOL SIMPAN
                   ElevatedButton(
                     onPressed: _isLoading ? null : _submitForm,
                     style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.pink,
+                      foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(vertical: 16),
                       textStyle: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     ),
                     child: _isLoading
                         ? const SizedBox(height: 24, width: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 3))

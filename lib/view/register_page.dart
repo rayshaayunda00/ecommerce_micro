@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../API/api_service.dart';
-import '../model/model_user.dart';
-
+import '../model/model_user.dart'; // Pastikan huruf kecil 'model' sesuai folder
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
@@ -21,15 +20,16 @@ class _RegisterPageState extends State<RegisterPage> {
     if (_formKey.currentState!.validate()) {
       setState(() => _isLoading = true);
 
-      // PERBAIKAN DISINI: Tambahkan 'id: 0' agar tidak error
+      // PERBAIKAN DISINI:
       ModelUser newUser = ModelUser(
-        id: 0, // <--- WAJIB ADA (Nilai sementara)
+        id: 0, // <--- TAMBAHKAN INI (Nilai sementara)
         name: _nameController.text.trim(),
         email: _emailController.text.trim(),
         role: 'customer',
       );
 
       try {
+        // Baris ini tidak akan error lagi karena newUser sudah punya ID 0
         ModelUser? createdUser = await apiService.addUser(newUser);
 
         if (mounted) setState(() => _isLoading = false);
@@ -39,10 +39,10 @@ class _RegisterPageState extends State<RegisterPage> {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(content: Text('Registrasi Berhasil! Silakan Login.'), backgroundColor: Colors.green),
             );
-            Navigator.pop(context); // Balik ke Login
+            Navigator.pop(context);
           }
         } else {
-          if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Gagal daftar. Email mungkin sudah ada.'), backgroundColor: Colors.red));
+          if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Gagal daftar.'), backgroundColor: Colors.red));
         }
       } catch (e) {
         if (mounted) {
@@ -60,15 +60,14 @@ class _RegisterPageState extends State<RegisterPage> {
       appBar: AppBar(title: const Text('Daftar Akun Baru')),
       body: Padding(
         padding: const EdgeInsets.all(20.0),
-        child: Center( // Tambahkan Center agar rapi
-          child: SingleChildScrollView( // Tambahkan Scroll agar tidak overflow di HP kecil
+        child: Center(
+          child: SingleChildScrollView(
             child: Card(
               child: Padding(
                 padding: const EdgeInsets.all(24.0),
                 child: Form(
                   key: _formKey,
                   child: Column(
-                    mainAxisSize: MainAxisSize.min,
                     children: [
                       const Text("Register", style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.pink)),
                       const SizedBox(height: 20),

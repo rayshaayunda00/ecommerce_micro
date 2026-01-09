@@ -1,7 +1,6 @@
-// --- FILE: lib/view/user_list_page.dart ---
 import 'package:flutter/material.dart';
 import '../API/api_service.dart';
-// Perbaikan: Path folder MODEL huruf besar
+// Pastikan baris ini sesuai dengan nama folder kamu (model vs MODEL)
 import '../model/model_user.dart';
 import 'add_user_page.dart';
 import 'user_detail_page.dart';
@@ -29,30 +28,50 @@ class _UserListPageState extends State<UserListPage> {
     });
   }
 
+  // Fungsi Hapus User
+  void _deleteUser(int id, String name) async {
+    // Kalau ID-nya 0 (user error), jangan jalankan apa-apa
+    if (id == 0) return;
+
+    bool? confirm = await showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text("Hapus Pengguna"),
+        content: Text("Yakin ingin menghapus $name?"),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text("Batal")),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text("Hapus"),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm != true) return;
+
+    bool success = await apiService.deleteUser(id);
+
+    if (success) {
+      _loadUsers();
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Berhasil dihapus"), backgroundColor: Colors.green));
+    } else {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Gagal menghapus"), backgroundColor: Colors.red));
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.pink[50],
-      appBar: AppBar(
-        title: const Text('Daftar Pengguna'),
-        actions: [
-          IconButton(onPressed: _loadUsers, icon: const Icon(Icons.refresh))
-        ],
-      ),
+      appBar: AppBar(title: const Text('Daftar Pengguna'), actions: [IconButton(onPressed: _loadUsers, icon: const Icon(Icons.refresh))]),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () async {
-          // Navigasi ke halaman tambah, tunggu hasilnya
-          final bool? result = await Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => const AddUserPage()),
-          );
-
-          // Jika berhasil nambah user (result == true), refresh list
+          final bool? result = await Navigator.push(context, MaterialPageRoute(builder: (context) => const AddUserPage()));
           if (result == true) {
             _loadUsers();
-            ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text("User berhasil ditambahkan"), backgroundColor: Colors.green,)
-            );
+            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("User ditambahkan"), backgroundColor: Colors.green));
           }
         },
         label: const Text('Tambah User'),
@@ -61,15 +80,9 @@ class _UserListPageState extends State<UserListPage> {
       body: FutureBuilder<List<ModelUser>>(
         future: futureUsers,
         builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          if (snapshot.hasError) {
-            return Center(child: Text('Error: ${snapshot.error}', style: const TextStyle(color: Colors.red)));
-          }
-          if (!snapshot.hasData || snapshot.data!.isEmpty) {
-            return const Center(child: Text('Tidak ada data pengguna.'));
-          }
+          if (snapshot.connectionState == ConnectionState.waiting) return const Center(child: CircularProgressIndicator());
+          if (snapshot.hasError) return Center(child: Text('Error: ${snapshot.error}'));
+          if (!snapshot.hasData || snapshot.data!.isEmpty) return const Center(child: Text('Tidak ada data.'));
 
           final users = snapshot.data!;
           return ListView.builder(
@@ -77,26 +90,31 @@ class _UserListPageState extends State<UserListPage> {
             itemCount: users.length,
             itemBuilder: (context, index) {
               final user = users[index];
+
+              // --- PERBAIKAN: AMBIL ID DENGAN AMAN ---
+              // Jika user.id error/merah, kode "?? 0" ini solusinya.
+              // Artinya: Ambil ID, kalau null ganti jadi 0.
+              final int userId = user.id ?? 0;
+
               return Card(
-                margin: const EdgeInsets.only(bottom: 12),
                 child: ListTile(
-                  leading: CircleAvatar(
-                    backgroundColor: Colors.pink[100],
-                    child: Text(
-                      user.name.isNotEmpty ? user.name[0].toUpperCase() : '?',
-                      style: TextStyle(color: Colors.pink[800], fontWeight: FontWeight.bold),
-                    ),
+                  leading: CircleAvatar(child: Text(user.name.isNotEmpty ? user.name[0].toUpperCase() : '?')),
+                  title: Text(user.name),
+                  subtitle: Text(user.role),
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.delete, color: Colors.red),
+                        // Gunakan userId yang sudah aman di atas
+                        onPressed: () => _deleteUser(userId, user.name),
+                      ),
+                      const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.pink),
+                    ],
                   ),
-                  title: Text(user.name, style: const TextStyle(fontWeight: FontWeight.bold)),
-                  subtitle: Text('${user.email}\nRole: ${user.role}'),
-                  isThreeLine: true,
-                  trailing: const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.pink),
                   onTap: () {
-                    // Navigasi ke detail user
-                    Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (context) => UserDetailPage(userId: user.id!)));
+                    // Gunakan userId yang sudah aman di atas
+                    Navigator.push(context, MaterialPageRoute(builder: (context) => UserDetailPage(userId: userId)));
                   },
                 ),
               );

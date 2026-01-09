@@ -220,6 +220,17 @@ class ApiService {
       return null;
     }
   }
+  // --- FUNGSI HAPUS USER ---
+  Future<bool> deleteUser(int id) async {
+    try {
+      final response = await http.delete(Uri.parse("$userBaseUrl/users/$id"));
+      // Status 200 (OK) atau 204 (No Content) berarti berhasil
+      return response.statusCode == 200 || response.statusCode == 204;
+    } catch (e) {
+      print('Exception deleteUser: $e');
+      return false;
+    }
+  }
 
   Future<ModelUser?> login(String email) async {
     try {
